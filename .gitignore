@@ -1,0 +1,62 @@
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+*.swp
+*.swo
+*.tmp
+*.bak
+*.log
+.idea/
+.vscode/
+
+# --- Env / secrets ---
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# --- Python ---
+**/__pycache__/
+**/*.py[cod]
+**/*.pyd
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.venv/
+**/venv/
+**/.coverage
+**/htmlcov/
+**/coverage.xml
+
+# --- Backend runtime artifacts ---
+backend/data/
+backend/storage/
+backend/app.db
+backend/*.db
+backend/*.sqlite
+backend/*.sqlite3
+
+# --- Node / frontend ---
+**/node_modules/
+**/dist/
+**/.vite/
+**/.npm-cache/
+**/.eslintcache
+**/.turbo/
+
+# --- Playwright ---
+**/playwright-report/
+**/test-results/
+**/.playwright/
+
+# --- Supabase CLI ---
+supabase/.temp/
+supabase/.branches/
+supabase/.output/

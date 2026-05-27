@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-mist text-ink font-sans antialiased dark:bg-slate-950 dark:text-slate-50;
+  background-image:
+    radial-gradient(900px 600px at 15% 5%, rgba(28, 124, 255, 0.20), transparent 60%),
+    radial-gradient(800px 500px at 85% 20%, rgba(76, 175, 255, 0.14), transparent 55%),
+    radial-gradient(900px 700px at 55% 110%, rgba(12, 55, 122, 0.10), transparent 60%);
+  background-attachment: fixed;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+  }
+
+  ::selection {
+    background: rgba(28, 124, 255, 0.25);
+  }
+}
+
+@layer components {
+  .surface {
+    @apply rounded-3xl bg-paper shadow-card ring-1 ring-black/5 dark:bg-slate-900/70 dark:ring-white/10;
+  }
+
+  .muted {
+    @apply text-black/60 dark:text-white/70;
+  }
+
+  .kbd {
+    @apply rounded-lg border border-black/10 bg-white px-2 py-0.5 font-mono text-[11px] text-black/70 dark:border-white/15 dark:bg-slate-950 dark:text-white/80;
+  }
+}
