@@ -12,11 +12,13 @@ class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=2000)
     page: str | None = Field(default=None, max_length=128)
     history: list[ChatMessageIn] = Field(default_factory=list, max_length=6)
+    session_id: str | None = None
 
 
 class ChatResponse(BaseModel):
     reply: str
     used_groq: bool = False
+    session_id: str | None = None
 
 
 class ScrapeSourceCreate(BaseModel):
@@ -32,4 +34,3 @@ class ScrapeRunResponse(BaseModel):
     created: int
     duplicates: int
     errors: int
-

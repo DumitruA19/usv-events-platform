@@ -67,6 +67,8 @@ class Settings(BaseSettings):
     scraper_max_pages: int = 25
     scrape_timeout_seconds: int = 12
     scrape_max_text_chars: int = 6000
+    scrape_allow_http: bool = False
+    scrape_allowed_hosts: str = ""  # comma-separated
 
     # Demo-only auth escape hatch (local only; never for production).
     demo_auth_fallback: bool = False

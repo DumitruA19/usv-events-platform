@@ -18,6 +18,17 @@ from app.models.system import AuditLog, Notification, Reminder, Report
 from app.models.user import User
 from app.models.oauth_account import OAuthAccount
 from app.models.calendar_event_link import CalendarEventLink
+from app.models.ai_kb import (
+    AIRequest,
+    ChatMessage,
+    ChatMessageKBRef,
+    ChatSession,
+    IngestionJob,
+    IngestionJobLog,
+    KBChunk,
+    ScrapedPageKB,
+    ScrapedSourceKB,
+)
 
 __all__ = [
     "Base",
@@ -45,6 +56,15 @@ __all__ = [
     "ScrapeSource",
     "OAuthAccount",
     "CalendarEventLink",
+    "ChatSession",
+    "ChatMessage",
+    "AIRequest",
+    "ScrapedSourceKB",
+    "ScrapedPageKB",
+    "KBChunk",
+    "IngestionJob",
+    "IngestionJobLog",
+    "ChatMessageKBRef",
     "RoleName",
     "EventStatus",
     "ParticipationMode",

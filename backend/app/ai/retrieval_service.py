@@ -4,7 +4,10 @@ from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
 
-from app.ai.db import dialect_name, exec_all
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
+
+from app.models.ai_kb import KBChunk
 
 
 @dataclass(frozen=True)
@@ -24,31 +27,17 @@ class RetrievalService:
             return []
         limit = max(1, min(int(limit), 20))
 
-        dialect = dialect_name(self.db)
-        if dialect == "sqlite":
-            rows = exec_all(
-                self.db,
-                """
-                select id, content
-                from kb_chunks
-                where content like :like
-                order by updated_at desc
-                limit :limit
-                """,
-                {"like": f"%{q}%", "limit": limit},
+        # Demo-safe: if KB table/schema isn't ready, treat KB as empty instead of 500.
+        try:
+            like = f"%{q.lower()}%"
+            stmt = (
+                select(KBChunk.id, KBChunk.content)
+                .where(func.lower(KBChunk.content).like(like))
+                .order_by(KBChunk.updated_at.desc())
+                .limit(limit)
             )
-        else:
-            rows = exec_all(
-                self.db,
-                """
-                select id, content
-                from public.kb_chunks
-                where content ilike :like
-                order by updated_at desc
-                limit :limit
-                """,
-                {"like": f"%{q}%", "limit": limit},
-            )
-
-        return [RetrievedChunk(id=str(r["id"]), content=str(r["content"]), score=None) for r in rows]
+            rows = list(self.db.execute(stmt).all())
+            return [RetrievedChunk(id=str(r[0]), content=str(r[1]), score=None) for r in rows]
+        except Exception:
+            return []
 

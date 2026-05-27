@@ -61,6 +61,27 @@ python .\scripts\reset_demo_passwords.py
 Fallback strict local (doar localhost + ENV=local) dacă încă primești 401:
 - setează în `backend/.env`: `DEMO_AUTH_FALLBACK=true`, `DEMO_ADMIN_PASSWORD=...`, `DEMO_ORGANIZER_PASSWORD=...`
 
+## AI (Chat + RAG) + Ingestion (KB)
+Necesită migrările Alembic (include tabele AI) rulate pe Supabase:
+```powershell
+cd backend
+python .\scripts\init_local.py
+```
+
+Configurare minimă pentru răspuns AI real (Groq):
+- `AI_ALLOW_EXTERNAL_CALLS=true`
+- `AI_PROVIDER=groq`
+- `AI_FEATURE_ENABLED=true`
+- `GROQ_API_KEY=...`
+
+Ingestion KB dintr-un URL (allowlist):
+- `SCRAPE_ALLOW_HTTP=true`
+- `SCRAPE_ALLOWED_HOSTS=www.usv.ro` (exemplu)
+
+Teste rapide:
+- În UI (autentificat), deschide Chat (dreapta-jos) și trimite o întrebare.
+- Ca admin: Admin → Scraping → folosește butonul `Ingest KB` pentru un URL allowlisted, apoi întreabă în chat despre conținutul ingerat.
+
 ## Build production
 
 ### Frontend

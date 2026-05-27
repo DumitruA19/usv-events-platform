@@ -11,6 +11,7 @@ export function ChatbotWidget() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [msgs, setMsgs] = useState<Msg[]>(() => [
     { role: "assistant", content: "Salut! Sunt asistentul platformei. Cu ce te pot ajuta?" }
   ]);
@@ -41,8 +42,10 @@ export function ChatbotWidget() {
     setLoading(true);
     try {
       const history = nextMsgs.slice(-4);
-      const res = await http.post("/ai/chat", { message: text, page, history });
+      const res = await http.post("/ai/chat", { message: text, page, history, session_id: sessionId });
       const reply = String(res.data?.reply ?? "Nu am primit răspuns.");
+      const sid = res.data?.session_id ? String(res.data.session_id) : null;
+      if (sid && !sessionId) setSessionId(sid);
       setMsgs((prev) => [...prev, { role: "assistant", content: reply }]);
     } catch (e: any) {
       const detail = e?.response?.data?.detail ?? "Asistentul nu este disponibil momentan.";

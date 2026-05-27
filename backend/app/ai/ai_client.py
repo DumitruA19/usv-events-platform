@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from app.core.config import settings
+from app.ai.groq_client import GroqClient
 
 
 @dataclass(frozen=True)
@@ -23,29 +24,45 @@ class AIClient:
     """
 
     def generate(self, prompt: str) -> AIResult:
-        _ = prompt
-        provider = settings.ai_provider
+        provider = (settings.ai_provider or "disabled").lower()
         model = settings.ai_model
 
-        if not settings.ai_api_key or provider == "disabled" or not settings.ai_allow_external_calls:
+        if not settings.ai_allow_external_calls:
             return AIResult(
-                content=(
-                    "AI is not configured for external calls.\n\n"
-                    "Set backend env vars:\n"
-                    "- AI_PROVIDER (e.g. openai)\n"
-                    "- AI_MODEL\n"
-                    "- AI_API_KEY\n"
-                    "- AI_ALLOW_EXTERNAL_CALLS=true\n"
-                    "Then implement the provider adapter in app/ai/ai_client.py."
-                ),
+                content="AI extern este dezactivat (AI_ALLOW_EXTERNAL_CALLS=false).",
                 status="skipped",
                 model=model,
-                provider=provider,
+                # Keep logs/UI clear regardless of what AI_PROVIDER is set to.
+                provider="disabled",
             )
 
-        # Intentionally not implemented: external network calls are out of scope by default.
+        # Groq (OpenAI-compatible) is implemented in this repo.
+        if provider in ("groq", "auto"):
+            groq = GroqClient()
+            if not groq.is_configured():
+                return AIResult(content="AI nu este configurat (lipsește GROQ_API_KEY sau AI_FEATURE_ENABLED=false).", status="skipped", model=settings.groq_model, provider="groq")
+            # Ask for a plain text answer (not JSON).
+            system = (
+                "You are a helpful assistant for the USV Events Platform. "
+                "Answer using the provided context. If context is insufficient, say you don't know."
+            )
+            res = groq.chat_json(system=f'{system} Return ONLY JSON: {{"reply":"..."}}', user=prompt)
+            if res.status != "ok":
+                return AIResult(content="AI indisponibil momentan.", status="error", model=settings.groq_model, provider="groq")
+            try:
+                import json
+
+                data = json.loads(res.content)
+                content = str(data.get("reply") or "").strip()
+            except Exception:
+                content = ""
+            if not content:
+                content = "Nu am putut genera un răspuns."
+            return AIResult(content=content, status="ok", model=settings.groq_model, provider="groq")
+
+        # Other providers not implemented.
         return AIResult(
-            content="AI external calls are enabled, but no provider adapter is implemented yet.",
+            content="AI_PROVIDER neimplementat. Folosește AI_PROVIDER=groq și setează GROQ_API_KEY.",
             status="skipped",
             model=model,
             provider=provider,

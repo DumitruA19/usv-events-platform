@@ -1,10 +1,24 @@
 from __future__ import annotations
 
 from pathlib import Path
+from urllib.parse import urlparse
+
+import httpx
+
+from app.core.config import settings
 
 
 class UnsafeTargetError(ValueError):
     pass
+
+
+def _allowed_hosts() -> set[str]:
+    out: set[str] = set()
+    for part in (settings.scrape_allowed_hosts or "").split(","):
+        h = part.strip().lower()
+        if h:
+            out.add(h)
+    return out
 
 
 def fetch_text(target: str) -> str:
@@ -37,5 +51,19 @@ def fetch_text(target: str) -> str:
             raise UnsafeTargetError("Refusing to read files outside the working directory")
         return rp.read_text(encoding="utf-8")
 
-    raise UnsafeTargetError("Only mock:// and file:// targets are allowed by default")
+    if t.startswith("http://") or t.startswith("https://"):
+        if not settings.scrape_allow_http:
+            raise UnsafeTargetError("HTTP scraping disabled (set SCRAPE_ALLOW_HTTP=true and SCRAPE_ALLOWED_HOSTS)")
+        parsed = urlparse(t)
+        host = (parsed.hostname or "").lower()
+        allowed = _allowed_hosts()
+        if not host or (allowed and host not in allowed):
+            raise UnsafeTargetError("Host not allowlisted for scraping")
+        headers = {"User-Agent": settings.scraper_user_agent}
+        with httpx.Client(timeout=float(settings.scrape_timeout_seconds), headers=headers, follow_redirects=True) as client:
+            res = client.get(t)
+            res.raise_for_status()
+            return res.text or ""
+
+    raise UnsafeTargetError("Only mock://, file:// and allowlisted http(s):// targets are supported")
 

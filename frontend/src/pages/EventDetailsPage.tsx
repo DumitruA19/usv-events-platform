@@ -212,7 +212,7 @@ export function EventDetailsPage() {
             <Button variant="secondary" onClick={exportIcs}>
               {t("action_export_ics")}
             </Button>
-            {auth.role === "STUDENT" && item.requires_registration ? (
+            {auth.role === "student" && item.requires_registration ? (
               <Button variant="primary" onClick={register}>
                 {t("action_register")}
               </Button>

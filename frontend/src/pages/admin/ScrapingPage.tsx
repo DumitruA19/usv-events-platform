@@ -23,6 +23,7 @@ export function ScrapingPage() {
   const [items, setItems] = useState<Draft[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
   const [url, setUrl] = useState("");
+  const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +33,7 @@ export function ScrapingPage() {
       setError("Trebuie să fii autentificat pentru a accesa această secțiune.");
       return;
     }
-    if (me && me.role !== "ADMIN") {
+    if (me && String(me.role).toLowerCase() !== "admin") {
       setLoading(false);
       setError("Nu ai drepturi de administrator pentru această secțiune.");
       return;
@@ -41,7 +42,12 @@ export function ScrapingPage() {
     setError(null);
     try {
       const res = await http.get("/ai/scrape/results");
-      setItems(res.data ?? []);
+      const data = res.data;
+      const arr = Array.isArray(data) ? data : (data?.items ?? []);
+      setItems(arr);
+      if (!Array.isArray(data) && data?.message && data.message !== "OK") setMsg(String(data.message));
+      const j = await http.get("/ai/ingestion/jobs");
+      setJobs(j.data ?? []);
     } catch (e: any) {
       if (e?.response?.status === 401) {
         setError("Trebuie să fii autentificat pentru a accesa această secțiune.");
@@ -64,6 +70,19 @@ export function ScrapingPage() {
     setMsg(null);
     const res = await http.post("/ai/scrape/run", { url: url.trim() ? url.trim() : null });
     setMsg(`Rulare completă: ${res.data.created} noi, ${res.data.duplicates} duplicate, ${res.data.errors} erori.`);
+    await reload();
+  }
+
+  async function ingestKb() {
+    setMsg(null);
+    const u = url.trim();
+    if (!u) return;
+    const res = await http.post("/ai/ingestion/run", { url: u });
+    if (res.data?.error) {
+      setMsg(`Ingestion failed: ${res.data.detail ?? res.data.error}`);
+    } else {
+      setMsg(`KB ingestion ok: job=${res.data.job_id}, chunks=${res.data.chunks ?? "?"}`);
+    }
     await reload();
   }
 
@@ -116,6 +135,25 @@ export function ScrapingPage() {
           <button onClick={runScrape} className="rounded-xl bg-usv-700 px-4 py-2 text-sm font-semibold text-white hover:bg-usv-800">
             Rulează scraping
           </button>
+          <button onClick={ingestKb} className="rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold hover:bg-black/5">
+            Ingest KB
+          </button>
+        </div>
+        <div className="mt-2 text-xs text-black/60">
+          Pentru ingestie reală, backend-ul necesită `SCRAPE_ALLOW_HTTP=true` + `SCRAPE_ALLOWED_HOSTS` allowlist.
+        </div>
+      </div>
+
+      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
+        <div className="text-sm font-bold">Ingestion jobs</div>
+        <div className="mt-2 grid gap-2 text-xs text-black/70">
+          {!jobs.length ? <div>Nu există joburi încă.</div> : null}
+          {jobs.slice(0, 10).map((j) => (
+            <div key={j.id} className="rounded-xl bg-black/5 p-3">
+              <div>#{j.id} · {j.status}</div>
+              {j.stats ? <div className="mt-1">{JSON.stringify(j.stats)}</div> : null}
+            </div>
+          ))}
         </div>
       </div>
 

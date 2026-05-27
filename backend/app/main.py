@@ -15,6 +15,16 @@ def create_app() -> FastAPI:
 
     app.state.startup_error = None
 
+    # CORS should wrap as early as possible so even error responses include headers.
+    cors_origins = allowed_cors_origins()
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
     @app.middleware("http")
     async def _block_on_startup_error(request: Request, call_next):
         err = getattr(app.state, "startup_error", None)
@@ -28,16 +38,6 @@ def create_app() -> FastAPI:
         if err:
             return {"ok": False, "error": err}
         return {"ok": True}
-
-    cors_origins = allowed_cors_origins()
-
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=cors_origins,
-        allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "Accept"],
-    )
 
     # Support both direct API paths (e.g. `/auth/...`) and `/api/...` paths.
     # Some frontend/env setups use `/api` as a prefix.
