@@ -3,6 +3,7 @@ from __future__ import annotations
 import urllib.parse
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
@@ -15,6 +16,7 @@ from app.integrations.registry import get_integrations
 from app.schemas.auth import LoginRequest, MockGoogleLoginRequest, RefreshRequest, TokenResponse
 from app.services.auth_service import AuthService
 from app.utils.oauth_state import sign_state, verify_state
+from app.core.config import normalized_database_url
 
 router = APIRouter()
 
@@ -24,12 +26,61 @@ def _debug_log(*args) -> None:
         return
     print(*args)
 
+def _redact_db_url(url: str) -> str:
+    try:
+        # redact password in: scheme://user:pass@host/...
+        if "@" in url and "://" in url:
+            prefix, rest = url.split("://", 1)
+            creds, after = rest.split("@", 1)
+            if ":" in creds:
+                user, _pw = creds.split(":", 1)
+                return f"{prefix}://{user}:***@{after}"
+    except Exception:
+        pass
+    return url
+
 
 @router.post("/login", response_model=TokenResponse)
-def login(payload: LoginRequest, db: Session = Depends(get_db)):
+def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)):
     svc = AuthService(db)
-    out = svc.login_username_password(payload.username, payload.password)
+    identifier = str(payload.email).strip().lower()
+    _debug_log("LOGIN_ATTEMPT email=", identifier)
+    _debug_log("LOGIN_DB url=", _redact_db_url(normalized_database_url()))
+    try:
+        out = svc.login_email_password(identifier, payload.password)
+    except HTTPException as e:
+        if e.status_code == 401:
+            user = svc.users.get_by_email(identifier)
+            _debug_log("USER_FOUND", bool(user))
+            if user:
+                _debug_log("DB_EMAIL", user.email)
+                _debug_log("HAS_PASSWORD", bool(user.hashed_password))
+                _debug_log("IS_ACTIVE", bool(user.is_active))
+                _debug_log("RAW_ROLE", str(user.role.name) if user.role else None)
+        # Optional strict-local demo fallback (does not affect Google OAuth).
+        if e.status_code == 401 and settings.env.lower() == "local":
+            from app.models.enums import RoleName
+
+            enabled = str(getattr(settings, "demo_auth_fallback", False)).lower() in ("1", "true", "yes", "on")
+            host = (request.client.host if request.client else "")
+            is_localhost = host in ("127.0.0.1", "::1", "localhost")
+            if enabled and is_localhost:
+                user = svc.users.get_by_email(identifier.strip().lower())
+                if user and user.is_active and user.hashed_password and user.role and str(user.role.name).upper() in (RoleName.ADMIN.value, RoleName.ORGANIZER.value):
+                    role_upper = str(user.role.name).upper()
+                    env_pw = settings.demo_admin_password if role_upper == RoleName.ADMIN.value else settings.demo_organizer_password
+                    if env_pw and payload.password == env_pw:
+                        out = svc._tokens_for_user(user)
+                    else:
+                        raise e
+                else:
+                    raise e
+            else:
+                raise e
+        else:
+            raise e
     db.commit()
+    _debug_log("TOKEN_CREATED", True)
     return out
 
 
@@ -171,4 +222,5 @@ def refresh(payload: RefreshRequest, db: Session = Depends(get_db)):
 
 @router.get("/me")
 def me(user=Depends(get_current_user)):
-    return {"id": user.id, "email": user.email, "username": user.username, "role": user.role.name}
+    role = str(user.role.name).lower() if user.role else None
+    return {"id": user.id, "email": user.email, "username": user.username, "role": role}

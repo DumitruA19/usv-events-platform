@@ -30,14 +30,17 @@ class AuthService:
         self.db.flush()
         return role
 
-    def login_username_password(self, username: str, password: str) -> dict:
-        user = self.users.get_by_username(username)
+    def login_email_password(self, email: str, password: str) -> dict:
+        raw = (email or "").strip().lower()
+        user = self.users.get_by_email(raw) if raw else None
         if not user or not user.is_active or not user.hashed_password:
             raise unauthorized("Invalid credentials")
-        if not verify_password(password, user.hashed_password):
+        ok = verify_password(password, user.hashed_password)
+        if not ok:
             raise unauthorized("Invalid credentials")
-        if user.role and user.role.name == RoleName.STUDENT.value:
-            # Students must use Google OAuth only (no password login).
+        role_name = str(user.role.name).upper() if user.role else ""
+        if role_name not in (RoleName.ADMIN.value, RoleName.ORGANIZER.value):
+            # Students must use Google OAuth only; any other roles can't use classic login.
             raise unauthorized("Invalid credentials")
         return self._tokens_for_user(user)
 
@@ -132,12 +135,12 @@ class AuthService:
         return self._tokens_for_user(user)
 
     def _tokens_for_user(self, user: User) -> dict:
-        role = RoleName(user.role.name)
+        role = RoleName(str(user.role.name).upper())
         access = create_access_token(str(user.id), role.value)
         refresh = create_refresh_token(str(user.id), role.value)
         return {
             "access_token": access,
             "refresh_token": refresh,
-            "role": role.value,
-            "user": {"id": user.id, "email": user.email, "username": user.username, "role": role.value},
+            "role": role.value.lower(),
+            "user": {"id": user.id, "email": user.email, "username": user.username, "role": role.value.lower()},
         }

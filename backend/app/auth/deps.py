@@ -50,7 +50,12 @@ def get_optional_user(db: Session = Depends(get_db), token: str | None = Depends
 
 def require_roles(*roles: RoleName):
     def _dep(user=Depends(get_current_user)):
-        if user.role is None or user.role.name not in roles:
+        if user.role is None:
+            raise forbidden("Insufficient role")
+        user_role = str(user.role.name).upper()
+        allowed = {r.value if isinstance(r, RoleName) else str(r) for r in roles}
+        allowed = {str(x).upper() for x in allowed}
+        if user_role not in allowed:
             raise forbidden("Insufficient role")
         return user
 

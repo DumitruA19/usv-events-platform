@@ -7,7 +7,7 @@ import { Button } from "../ui/Button";
 import { ButtonLink } from "../ui/ButtonLink";
 import { ChatbotWidget } from "../components/ChatbotWidget";
 
-type NavItem = { to: string; label: string; roles?: Array<"STUDENT" | "ORGANIZER" | "ADMIN"> };
+type NavItem = { to: string; label: string; roles?: Array<"student" | "organizer" | "admin"> };
 
 export function AppLayout() {
   const { auth, logout } = useAuth();
@@ -17,15 +17,15 @@ export function AppLayout() {
   const NAV: NavItem[] = [
     { to: "/events", label: t("nav_events") },
     { to: "/calendar", label: t("nav_calendar") },
-    { to: "/student/registrations", label: t("nav_my_registrations"), roles: ["STUDENT"] },
-    { to: "/student/recommendations", label: t("nav_recommendations"), roles: ["STUDENT"] },
-    { to: "/organizer/events", label: t("nav_my_events"), roles: ["ORGANIZER"] },
-    { to: "/organizer/create", label: t("nav_create_event"), roles: ["ORGANIZER"] },
-    { to: "/admin/organizers", label: t("nav_users_admin"), roles: ["ADMIN"] },
-    { to: "/admin/events", label: t("nav_events_admin"), roles: ["ADMIN"] },
-    { to: "/admin/pending", label: t("nav_approvals"), roles: ["ADMIN"] },
-    { to: "/admin/reports", label: t("nav_reports"), roles: ["ADMIN"] },
-    { to: "/admin/scraping", label: t("nav_scraping"), roles: ["ADMIN"] }
+    { to: "/student/registrations", label: t("nav_my_registrations"), roles: ["student"] },
+    { to: "/student/recommendations", label: t("nav_recommendations"), roles: ["student"] },
+    { to: "/organizer/events", label: t("nav_my_events"), roles: ["organizer"] },
+    { to: "/organizer/create", label: t("nav_create_event"), roles: ["organizer"] },
+    { to: "/admin/organizers", label: t("nav_users_admin"), roles: ["admin"] },
+    { to: "/admin/events", label: t("nav_events_admin"), roles: ["admin"] },
+    { to: "/admin/pending", label: t("nav_approvals"), roles: ["admin"] },
+    { to: "/admin/reports", label: t("nav_reports"), roles: ["admin"] },
+    { to: "/admin/scraping", label: t("nav_scraping"), roles: ["admin"] }
   ];
   const navItems = NAV.filter((i) => !i.roles || (role ? i.roles.includes(role) : false));
   const navTestId = (to: string) => `nav-${to.replace(/^\//, "").replace(/\//g, "-") || "home"}`;
@@ -34,9 +34,9 @@ export function AppLayout() {
     { to: "/", label: t("nav_home") },
     { to: "/events", label: t("nav_events") },
     { to: "/calendar", label: t("nav_calendar") },
-    role === "STUDENT" ? { to: "/student", label: t("role_student") } : null,
-    role === "ORGANIZER" ? { to: "/organizer", label: t("role_organizer") } : null,
-    role === "ADMIN" ? { to: "/admin", label: t("role_admin") } : null,
+    role === "student" ? { to: "/student", label: t("role_student") } : null,
+    role === "organizer" ? { to: "/organizer", label: t("role_organizer") } : null,
+    role === "admin" ? { to: "/admin", label: t("role_admin") } : null,
     !role ? { to: "/login/student", label: t("nav_login") } : null,
   ].filter(Boolean) as NavItem[];
 

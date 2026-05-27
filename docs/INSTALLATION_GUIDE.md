@@ -12,6 +12,8 @@ cd usv-events-platform\backend
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+## Configure `backend/.env` from `backend/.env.example`
+## (set DATABASE_URL to Supabase Postgres + SUPABASE_URL + SUPABASE_ANON_KEY)
 python .\scripts\init_local.py
 uvicorn app.main:app --reload
 ```

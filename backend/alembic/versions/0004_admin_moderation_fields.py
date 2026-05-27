@@ -16,24 +16,28 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Users: track updated_at (optional, useful for admin management / auditing).
-    op.add_column("users", sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True))
+    # Use batch mode so migrations work on SQLite (no ALTER CONSTRAINT support)
+    # and on Postgres/Supabase.
+    with op.batch_alter_table("users") as batch:
+        batch.add_column(sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True))
 
-    # Events: store moderation metadata + reasons (reject/cancel).
-    op.add_column("events", sa.Column("moderated_at", sa.DateTime(timezone=True), nullable=True))
-    op.add_column("events", sa.Column("moderated_by_admin_id", sa.Integer(), nullable=True))
-    op.add_column("events", sa.Column("rejection_reason", sa.Text(), nullable=True))
-    op.add_column("events", sa.Column("cancel_reason", sa.Text(), nullable=True))
-    op.create_foreign_key("fk_events_moderated_by_admin", "events", "users", ["moderated_by_admin_id"], ["id"])
-    op.create_index(op.f("ix_events_moderated_by_admin_id"), "events", ["moderated_by_admin_id"], unique=False)
+    with op.batch_alter_table("events") as batch:
+        batch.add_column(sa.Column("moderated_at", sa.DateTime(timezone=True), nullable=True))
+        batch.add_column(sa.Column("moderated_by_admin_id", sa.Integer(), nullable=True))
+        batch.add_column(sa.Column("rejection_reason", sa.Text(), nullable=True))
+        batch.add_column(sa.Column("cancel_reason", sa.Text(), nullable=True))
+        batch.create_foreign_key("fk_events_moderated_by_admin", "users", ["moderated_by_admin_id"], ["id"])
+        batch.create_index(op.f("ix_events_moderated_by_admin_id"), ["moderated_by_admin_id"], unique=False)
 
 
 def downgrade() -> None:
-    op.drop_index(op.f("ix_events_moderated_by_admin_id"), table_name="events")
-    op.drop_constraint("fk_events_moderated_by_admin", "events", type_="foreignkey")
-    op.drop_column("events", "cancel_reason")
-    op.drop_column("events", "rejection_reason")
-    op.drop_column("events", "moderated_by_admin_id")
-    op.drop_column("events", "moderated_at")
-    op.drop_column("users", "updated_at")
+    with op.batch_alter_table("events") as batch:
+        batch.drop_index(op.f("ix_events_moderated_by_admin_id"))
+        batch.drop_constraint("fk_events_moderated_by_admin", type_="foreignkey")
+        batch.drop_column("cancel_reason")
+        batch.drop_column("rejection_reason")
+        batch.drop_column("moderated_by_admin_id")
+        batch.drop_column("moderated_at")
 
+    with op.batch_alter_table("users") as batch:
+        batch.drop_column("updated_at")

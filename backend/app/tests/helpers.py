@@ -26,7 +26,8 @@ def create_user(db: Session, role: str, username: str | None, email: str | None,
 
 
 def login(client, username: str, password: str) -> str:
-    res = client.post("/auth/login", json={"username": username, "password": password})
+    # Classic login is email-only.
+    res = client.post("/auth/login", json={"email": username, "password": password})
     assert res.status_code == 200, res.text
     return res.json()["access_token"]
 

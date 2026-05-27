@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
 
-export type Role = "STUDENT" | "ORGANIZER" | "ADMIN";
+export type Role = "student" | "organizer" | "admin";
 
 export type AuthState = {
   accessToken: string | null;

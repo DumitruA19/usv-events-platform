@@ -22,7 +22,7 @@ export function AuthCallbackPage() {
     const params = parseHash(loc.hash || "");
     const accessToken = params.access_token || null;
     const refreshToken = params.refresh_token || null;
-    const role = (params.role as any) || null;
+    const role = (params.role ? String(params.role).toLowerCase() : null) as any;
     const next = params.next || "/";
 
     if (!accessToken || !refreshToken || !role) {
@@ -40,13 +40,13 @@ export function AuthCallbackPage() {
     setAuthToken(accessToken);
 
     // Route by role by default. Only honor `next` when it matches the user's role.
-    const roleUpper = String(role).toUpperCase();
-    const defaultNext = roleUpper === "ADMIN" ? "/admin" : roleUpper === "ORGANIZER" ? "/organizer" : "/student";
+    const roleLower = String(role).toLowerCase();
+    const defaultNext = roleLower === "admin" ? "/admin" : roleLower === "organizer" ? "/organizer" : "/student";
     const safeNext = typeof next === "string" && next.startsWith("/") ? next : defaultNext;
     const roleOk =
-      (roleUpper === "STUDENT" && safeNext.startsWith("/student")) ||
-      (roleUpper === "ORGANIZER" && safeNext.startsWith("/organizer")) ||
-      (roleUpper === "ADMIN" && safeNext.startsWith("/admin"));
+      (roleLower === "student" && safeNext.startsWith("/student")) ||
+      (roleLower === "organizer" && safeNext.startsWith("/organizer")) ||
+      (roleLower === "admin" && safeNext.startsWith("/admin"));
 
     nav(roleOk ? safeNext : defaultNext, { replace: true });
   }, [loc.hash, nav, setAuth]);

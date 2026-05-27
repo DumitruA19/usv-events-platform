@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import os
 
 import json
 from datetime import datetime, timedelta, timezone
@@ -77,10 +78,23 @@ def get_or_create_user(db, *, role: Role, username: str | None, email: str | Non
     if username:
         existing = db.scalar(select(User).where(User.username == username))
         if existing:
+            # Repair existing rows (common when switching DBs / running seed multiple times).
+            if existing.role_id != role.id:
+                existing.role_id = role.id
+            if password and not existing.hashed_password:
+                existing.hashed_password = hash_password(password)
+            if existing.is_active is not True:
+                existing.is_active = True
             return existing
     if email:
         existing = db.scalar(select(User).where(User.email == email))
         if existing:
+            if existing.role_id != role.id:
+                existing.role_id = role.id
+            if password and not existing.hashed_password:
+                existing.hashed_password = hash_password(password)
+            if existing.is_active is not True:
+                existing.is_active = True
             return existing
     u = User(
         username=username,
@@ -118,14 +132,30 @@ def main() -> None:
         loc_lab = get_or_create_location(db, "USV - Lab 42", "Str. Universitatii 13", "L42")
         loc_online = get_or_create_location(db, "Online", None, None)
 
-        # Users
-        admin = get_or_create_user(db, role=admin_role, username="admin", email=None, password="AdminPass!234")
-        org1 = get_or_create_user(db, role=organizer_role, username="organizer1", email=None, password="OrganizerPass!234")
-        org2 = get_or_create_user(db, role=organizer_role, username="organizer2", email=None, password="OrganizerPass!234")
+        # Users (credentials come from env; use safe demo defaults only in local env).
+        def env_or_default(name: str, default: str) -> str | None:
+            v = os.getenv(name)
+            if v is not None and str(v).strip():
+                return str(v).strip()
+            return default if settings.env.lower() == "local" else None
 
-        if not db.scalar(select(OrganizerProfile).where(OrganizerProfile.user_id == org1.id)):
+        admin_username = env_or_default("SEED_ADMIN_USERNAME", "admin")
+        admin_password = env_or_default("SEED_ADMIN_PASSWORD", "AdminPass!234")
+        org1_username = env_or_default("SEED_ORG1_USERNAME", "organizer1")
+        org1_password = env_or_default("SEED_ORG1_PASSWORD", "OrganizerPass!234")
+        org2_username = env_or_default("SEED_ORG2_USERNAME", "organizer2")
+        org2_password = env_or_default("SEED_ORG2_PASSWORD", "OrganizerPass!234")
+
+        admin = get_or_create_user(db, role=admin_role, username=admin_username, email=None, password=admin_password) if admin_username else None
+        org1 = get_or_create_user(db, role=organizer_role, username=org1_username, email=None, password=org1_password) if org1_username else None
+        org2 = get_or_create_user(db, role=organizer_role, username=org2_username, email=None, password=org2_password) if org2_username else None
+
+        if admin is None or org1 is None or org2 is None:
+            print("Seed note: admin/organizer demo users not fully created (set SEED_* env vars or ENV=local).")
+
+        if org1 and not db.scalar(select(OrganizerProfile).where(OrganizerProfile.user_id == org1.id)):
             db.add(OrganizerProfile(user_id=org1.id, display_name="Organizer One", faculty_department_id=fd_fiesc.id))
-        if not db.scalar(select(OrganizerProfile).where(OrganizerProfile.user_id == org2.id)):
+        if org2 and not db.scalar(select(OrganizerProfile).where(OrganizerProfile.user_id == org2.id)):
             db.add(OrganizerProfile(user_id=org2.id, display_name="Organizer Two", faculty_department_id=fd_economics.id))
 
         students = []
@@ -287,8 +317,9 @@ def main() -> None:
             db.add(Reminder(user_id=students[0].id, event_id=upcoming_event.id, scheduled_at=now + timedelta(days=4)))
 
         # Notifications/audit logs (demo trace)
-        db.add(Notification(user_id=admin.id, type="SEED", payload_json=json.dumps({"status": "completed"}), created_at=now))
-        db.add(AuditLog(actor_id=admin.id, action="SEED_RUN", entity_type=None, entity_id=None, details_json=json.dumps({"when": now.isoformat()})))
+        if admin:
+            db.add(Notification(user_id=admin.id, type="SEED", payload_json=json.dumps({"status": "completed"}), created_at=now))
+            db.add(AuditLog(actor_id=admin.id, action="SEED_RUN", entity_type=None, entity_id=None, details_json=json.dumps({"when": now.isoformat()})))
 
         # Reports (demo placeholder)
         report_path = Path(settings.storage_dir) / "reports" / "demo-report.txt"

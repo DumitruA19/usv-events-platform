@@ -19,13 +19,21 @@ def test_mock_google_login_rejects_non_student_domain(client):
     assert res.status_code == 400
 
 
+def test_login_accepts_identifier_username(client, db_session: Session):
+    seed_roles(db_session)
+    create_user(db_session, RoleName.ADMIN.value, "admin", "admin@example.com", "AdminPass!234")
+    db_session.commit()
+    token = login(client, "admin@example.com", "AdminPass!234")
+    assert token
+
+
 def test_event_approval_workflow(client, db_session: Session):
     seed_roles(db_session)
-    create_user(db_session, RoleName.ADMIN.value, "admin", None, "AdminPass!234")
-    create_user(db_session, RoleName.ORGANIZER.value, "organizer1", None, "OrganizerPass!234")
+    create_user(db_session, RoleName.ADMIN.value, "admin", "admin@example.com", "AdminPass!234")
+    create_user(db_session, RoleName.ORGANIZER.value, "organizer1", "organizer1@example.com", "OrganizerPass!234")
     db_session.commit()
 
-    org_token = login(client, "organizer1", "OrganizerPass!234")
+    org_token = login(client, "organizer1@example.com", "OrganizerPass!234")
 
     res = client.post(
         "/events",
@@ -49,7 +57,7 @@ def test_event_approval_workflow(client, db_session: Session):
     assert res.status_code == 200, res.text
     assert res.json()["status"] == EventStatus.PENDING_APPROVAL.value
 
-    admin_token = login(client, "admin", "AdminPass!234")
+    admin_token = login(client, "admin@example.com", "AdminPass!234")
     res = client.post(f"/events/{event_id}/approve", headers={"Authorization": f"Bearer {admin_token}"})
     assert res.status_code == 200
     assert res.json()["status"] == EventStatus.PUBLISHED.value
@@ -57,11 +65,11 @@ def test_event_approval_workflow(client, db_session: Session):
 
 def test_registration_capacity_waiting_list_promotion(client, db_session: Session):
     seed_roles(db_session)
-    create_user(db_session, RoleName.ADMIN.value, "admin", None, "AdminPass!234")
-    create_user(db_session, RoleName.ORGANIZER.value, "organizer1", None, "OrganizerPass!234")
+    create_user(db_session, RoleName.ADMIN.value, "admin", "admin@example.com", "AdminPass!234")
+    create_user(db_session, RoleName.ORGANIZER.value, "organizer1", "organizer1@example.com", "OrganizerPass!234")
     db_session.commit()
 
-    org_token = login(client, "organizer1", "OrganizerPass!234")
+    org_token = login(client, "organizer1@example.com", "OrganizerPass!234")
     now = datetime.now(timezone.utc)
     res = client.post(
         "/events",
@@ -111,11 +119,11 @@ def test_registration_capacity_waiting_list_promotion(client, db_session: Sessio
 
 def test_feedback_rule_only_after_end(client, db_session: Session):
     seed_roles(db_session)
-    create_user(db_session, RoleName.ADMIN.value, "admin", None, "AdminPass!234")
-    create_user(db_session, RoleName.ORGANIZER.value, "organizer1", None, "OrganizerPass!234")
+    create_user(db_session, RoleName.ADMIN.value, "admin", "admin@example.com", "AdminPass!234")
+    create_user(db_session, RoleName.ORGANIZER.value, "organizer1", "organizer1@example.com", "OrganizerPass!234")
     db_session.commit()
 
-    org_token = login(client, "organizer1", "OrganizerPass!234")
+    org_token = login(client, "organizer1@example.com", "OrganizerPass!234")
     now = datetime.now(timezone.utc)
     res = client.post(
         "/events",
@@ -173,10 +181,10 @@ def test_feedback_rule_only_after_end(client, db_session: Session):
 
 def test_admin_report_pdf_generates_file(client, db_session: Session, temp_storage_dir):
     seed_roles(db_session)
-    create_user(db_session, RoleName.ADMIN.value, "admin", None, "AdminPass!234")
+    create_user(db_session, RoleName.ADMIN.value, "admin", "admin@example.com", "AdminPass!234")
     db_session.commit()
 
-    admin_token = login(client, "admin", "AdminPass!234")
+    admin_token = login(client, "admin@example.com", "AdminPass!234")
     res = client.get("/admin/reports/export-pdf", headers={"Authorization": f"Bearer {admin_token}"})
     assert res.status_code == 200, res.text
     path = res.json()["file_path"]

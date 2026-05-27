@@ -42,6 +42,7 @@ backend/app.db
 backend/*.db
 backend/*.sqlite
 backend/*.sqlite3
+backend/.tmp-tests/
 
 # --- Node / frontend ---
 **/node_modules/

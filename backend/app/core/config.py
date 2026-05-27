@@ -68,8 +68,21 @@ class Settings(BaseSettings):
     scrape_timeout_seconds: int = 12
     scrape_max_text_chars: int = 6000
 
+    # Demo-only auth escape hatch (local only; never for production).
+    demo_auth_fallback: bool = False
+    demo_admin_password: str | None = None
+    demo_organizer_password: str | None = None
+
 
 settings = Settings()
+
+def _looks_like_placeholder(value: str) -> bool:
+    v = (value or "").strip().lower()
+    if not v:
+        return True
+    if "change_me" in v or v in {"unset", "disabled", "none"}:
+        return True
+    return False
 
 
 def normalized_database_url() -> str:
@@ -90,6 +103,36 @@ def normalized_database_url() -> str:
             path = (backend_dir / path).resolve()
             return f"sqlite:///{path.as_posix()}"
     return url
+
+
+def validate_runtime_config() -> str | None:
+    """
+    Fail fast with clear messages for misconfigured Supabase/Postgres setups.
+    """
+    url = normalized_database_url()
+    if url.startswith("sqlite:"):
+        return None
+
+    missing: list[str] = []
+    if not settings.database_url:
+        missing.append("DATABASE_URL")
+    if settings.supabase_url is None or not str(settings.supabase_url).strip():
+        missing.append("SUPABASE_URL")
+    if settings.supabase_anon_key is None or not str(settings.supabase_anon_key).strip():
+        missing.append("SUPABASE_ANON_KEY")
+
+    if missing:
+        return (
+            "Missing required environment variables for Supabase/PostgreSQL: "
+            + ", ".join(missing)
+            + ". Configure `backend/.env` based on `backend/.env.example`."
+        )
+
+    # Service role key is optional unless a feature explicitly needs it.
+    if settings.supabase_service_role_key and _looks_like_placeholder(str(settings.supabase_service_role_key)):
+        return "SUPABASE_SERVICE_ROLE_KEY looks like a placeholder; remove it or set a real value."
+
+    return None
 
 
 def allowed_student_email_domains() -> list[str]:

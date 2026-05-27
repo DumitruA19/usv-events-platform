@@ -40,7 +40,7 @@ export default function App() {
         <Route
           path="/student"
           element={
-            <ProtectedRoute roles={["STUDENT"]}>
+            <ProtectedRoute roles={["student"]}>
               <StudentDashboardPage />
             </ProtectedRoute>
           }
@@ -48,7 +48,7 @@ export default function App() {
         <Route
           path="/student/registrations"
           element={
-            <ProtectedRoute roles={["STUDENT"]}>
+            <ProtectedRoute roles={["student"]}>
               <MyRegistrationsPage />
             </ProtectedRoute>
           }
@@ -56,7 +56,7 @@ export default function App() {
         <Route
           path="/student/recommendations"
           element={
-            <ProtectedRoute roles={["STUDENT"]}>
+            <ProtectedRoute roles={["student"]}>
               <RecommendationsPage />
             </ProtectedRoute>
           }
@@ -64,7 +64,7 @@ export default function App() {
         <Route
           path="/organizer"
           element={
-            <ProtectedRoute roles={["ORGANIZER"]}>
+            <ProtectedRoute roles={["organizer"]}>
               <OrganizerDashboardPage />
             </ProtectedRoute>
           }
@@ -72,7 +72,7 @@ export default function App() {
         <Route
           path="/organizer/events"
           element={
-            <ProtectedRoute roles={["ORGANIZER"]}>
+            <ProtectedRoute roles={["organizer"]}>
               <MyEventsPage />
             </ProtectedRoute>
           }
@@ -80,7 +80,7 @@ export default function App() {
         <Route
           path="/organizer/create"
           element={
-            <ProtectedRoute roles={["ORGANIZER"]}>
+            <ProtectedRoute roles={["organizer"]}>
               <EventFormPage />
             </ProtectedRoute>
           }
@@ -88,7 +88,7 @@ export default function App() {
         <Route
           path="/organizer/events/:id/edit"
           element={
-            <ProtectedRoute roles={["ORGANIZER"]}>
+            <ProtectedRoute roles={["organizer"]}>
               <EventFormPage />
             </ProtectedRoute>
           }
@@ -96,7 +96,7 @@ export default function App() {
         <Route
           path="/organizer/events/:id/participants"
           element={
-            <ProtectedRoute roles={["ORGANIZER"]}>
+            <ProtectedRoute roles={["organizer"]}>
               <ParticipantsPage />
             </ProtectedRoute>
           }
@@ -104,7 +104,7 @@ export default function App() {
         <Route
           path="/organizer/events/:id/materials"
           element={
-            <ProtectedRoute roles={["ORGANIZER"]}>
+            <ProtectedRoute roles={["organizer"]}>
               <MaterialsPage />
             </ProtectedRoute>
           }
@@ -112,7 +112,7 @@ export default function App() {
         <Route
           path="/organizer/events/:id/submit"
           element={
-            <ProtectedRoute roles={["ORGANIZER"]}>
+            <ProtectedRoute roles={["organizer"]}>
               <SubmitForApprovalPage />
             </ProtectedRoute>
           }
@@ -120,7 +120,7 @@ export default function App() {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute roles={["ADMIN"]}>
+            <ProtectedRoute roles={["admin"]}>
               <AdminDashboardPage />
             </ProtectedRoute>
           }
@@ -128,7 +128,7 @@ export default function App() {
         <Route
           path="/admin/pending"
           element={
-            <ProtectedRoute roles={["ADMIN"]}>
+            <ProtectedRoute roles={["admin"]}>
               <PendingApprovalsPage />
             </ProtectedRoute>
           }
@@ -136,7 +136,7 @@ export default function App() {
         <Route
           path="/admin/organizers"
           element={
-            <ProtectedRoute roles={["ADMIN"]}>
+            <ProtectedRoute roles={["admin"]}>
               <OrganizerManagementPage />
             </ProtectedRoute>
           }
@@ -144,7 +144,7 @@ export default function App() {
         <Route
           path="/admin/events"
           element={
-            <ProtectedRoute roles={["ADMIN"]}>
+            <ProtectedRoute roles={["admin"]}>
               <EventsManagementPage />
             </ProtectedRoute>
           }
@@ -152,7 +152,7 @@ export default function App() {
         <Route
           path="/admin/reports"
           element={
-            <ProtectedRoute roles={["ADMIN"]}>
+            <ProtectedRoute roles={["admin"]}>
               <ReportsPage />
             </ProtectedRoute>
           }
@@ -160,7 +160,7 @@ export default function App() {
         <Route
           path="/admin/scraping"
           element={
-            <ProtectedRoute roles={["ADMIN"]}>
+            <ProtectedRoute roles={["admin"]}>
               <ScrapingPage />
             </ProtectedRoute>
           }

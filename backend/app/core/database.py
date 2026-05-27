@@ -3,12 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from sqlalchemy import create_engine
-from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 
 from app.core.config import normalized_database_url, settings
-
-LOCAL_SQLITE_URL = f"sqlite:///{(Path(__file__).resolve().parents[2] / 'data' / 'app.db').resolve().as_posix()}"
 
 
 def _sqlite_connect_args(url: str) -> dict:
@@ -53,16 +50,6 @@ def _build_engine(url: str):
 
 database_url = normalized_database_url()
 engine = _build_engine(database_url)
-
-# In local development, if a remote Postgres URL is configured but unreachable,
-# fall back to the repo-local SQLite database so the app can still start.
-if settings.env == "local" and not database_url.startswith("sqlite:"):
-    try:
-        with engine.connect():
-            pass
-    except OperationalError:
-        database_url = LOCAL_SQLITE_URL
-        engine = _build_engine(database_url)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

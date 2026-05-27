@@ -1,6 +1,6 @@
 # USV University Events Management Platform
 
-Monorepo cu `FastAPI` + `React/Vite` pentru gestionarea evenimentelor universitare. Supabase rămâne serviciu extern pentru Postgres și chei asociate.
+Monorepo cu `FastAPI` + `React/Vite` pentru gestionarea evenimentelor universitare. Supabase este serviciul extern pentru Postgres și cheile asociate.
 
 ## Structură
 - `backend/` API FastAPI, SQLAlchemy, Alembic
@@ -16,6 +16,7 @@ cd backend
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+python .\scripts\init_local.py
 uvicorn app.main:app --reload
 ```
 
@@ -30,7 +31,7 @@ npm run dev
 - copiază `backend/.env.example` în `backend/.env`
 - copiază `frontend/.env.example` în `frontend/.env`
 - configurează:
-  - `DATABASE_URL`
+  - `DATABASE_URL` (Supabase Postgres; recomandat *Direct connection*)
   - `GOOGLE_CLIENT_ID`
   - `GOOGLE_CLIENT_SECRET`
   - `GOOGLE_REDIRECT_URI`
@@ -38,9 +39,27 @@ npm run dev
   - `VITE_API_BASE_URL`
   - `SUPABASE_URL`
   - `SUPABASE_ANON_KEY`
-  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `SUPABASE_SERVICE_ROLE_KEY` (doar backend, niciodată în frontend)
   - `GROQ_API_KEY`
   - `GROQ_MODEL`
+
+Note:
+- dacă `DATABASE_URL` pointează către Postgres dar lipsesc `SUPABASE_URL`/`SUPABASE_ANON_KEY`, backendul pornește dar răspunde `503 CONFIG_ERROR` până la configurare (vezi `/healthz`).
+- dacă pooler-ul Supabase este blocat de rețea/firewall, folosește conexiunea directă (host `db.<project_ref>.supabase.co`, port `5432`).
+
+## Demo urgent: reset parole admin/organizer (Supabase)
+Dacă ai userii în `public.users`, dar nu știi parolele (sau hash-urile nu se potrivesc), poți seta parole demo în Supabase din backend:
+```powershell
+cd backend
+$env:DEMO_MODE="true"
+$env:DEMO_ADMIN_IDENTIFIER="admin"            # sau email
+$env:DEMO_ADMIN_PASSWORD="DemoAdminPass!234"
+$env:DEMO_ORGANIZER_IDENTIFIER="organizer1"   # sau email
+$env:DEMO_ORGANIZER_PASSWORD="DemoOrgPass!234"
+python .\scripts\reset_demo_passwords.py
+```
+Fallback strict local (doar localhost + ENV=local) dacă încă primești 401:
+- setează în `backend/.env`: `DEMO_AUTH_FALLBACK=true`, `DEMO_ADMIN_PASSWORD=...`, `DEMO_ORGANIZER_PASSWORD=...`
 
 ## Build production
 

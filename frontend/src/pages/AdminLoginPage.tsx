@@ -13,8 +13,8 @@ export function AdminLoginPage() {
   const { t } = useI18n();
   const nav = useNavigate();
   const { setAuth } = useAuth();
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("AdminPass!234");
+  const [email, setEmail] = useState("iroftei390@gmail.com");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -22,12 +22,13 @@ export function AdminLoginPage() {
     setError(null);
     setLoading(true);
     try {
-      const res = await http.post("/auth/login", { username, password });
+      const res = await http.post("/auth/login", { email, password });
+      const role = String(res.data.role || "").toLowerCase();
       setAuth({
         accessToken: res.data.access_token,
         refreshToken: res.data.refresh_token,
-        role: res.data.role,
-        username
+        role: role as any,
+        username: null
       });
       setAuthToken(res.data.access_token);
       nav("/admin");
@@ -49,7 +50,7 @@ export function AdminLoginPage() {
         <p className="mt-2 text-sm muted">{t("login_admin_subtitle")}</p>
 
         <div className="mt-6 grid gap-3">
-          <Input label={t("username")} value={username} onChange={(e) => setUsername(e.target.value)} data-testid="admin-username" />
+          <Input label="Email" value={email} onChange={(e) => setEmail(e.target.value)} data-testid="admin-email" />
           <Input label={t("password")} type="password" value={password} onChange={(e) => setPassword(e.target.value)} data-testid="admin-password" />
           {error ? <div className="rounded-2xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-red-100">{error}</div> : null}
           <Button onClick={submit} disabled={loading} data-testid="admin-login">
